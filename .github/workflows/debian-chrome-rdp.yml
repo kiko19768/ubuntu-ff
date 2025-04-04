@@ -6,45 +6,39 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest # نستخدم Ubuntu كمضيف لتشغيل حاوية Debian
-    timeout-minutes: 360 # 6 ساعات كحد أقصى
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
 
     steps:
-      # الخروج من المستودع لضمان بيئة نظيفة
       - name: Checkout Repository
         uses: actions/checkout@v3
 
-      # إعداد حاوية Docker باستخدام Debian
       - name: Set up Docker with Debian
         run: |
           docker run -dit --name debian-rdp -v $(pwd):/workspace debian:latest /bin/bash
 
-      # تثبيت التبعيات الأساسية في حاوية Debian
       - name: Install Dependencies
         run: |
           docker exec debian-rdp bash -c "apt-get update && apt-get install -y wget gnupg2 sudo"
 
-      # إضافة مستودع Google وتثبيت Chrome Remote Desktop
       - name: Install Chrome Remote Desktop
         run: |
-          docker exec debian-rdp bash -c "wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add -"
-          docker exec debian-rdp bash -c "echo 'deb http://dl.google.com/linux/chrome/deb/ stable main' >> /etc/apt/sources.list.d/google-chrome.list"
+          docker exec debian-rdp bash -c "wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | apt-key add -"
+          docker exec debian-rdp bash -c "echo 'deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main' > /etc/apt/sources.list.d/google-chrome.list"
           docker exec debian-rdp bash -c "apt-get update && apt-get install -y google-chrome-stable chrome-remote-desktop"
 
-      # تثبيت بيئة سطح المكتب (XFCE كمثال خفيف)
       - name: Install XFCE Desktop Environment
         run: |
           docker exec debian-rdp bash -c "apt-get install -y xfce4 xfce4-goodies"
 
-      # إعداد المستخدم وتشغيل Chrome Remote Desktop
       - name: Configure Chrome Remote Desktop
         run: |
           docker exec debian-rdp bash -c "useradd -m -s /bin/bash runner"
           docker exec debian-rdp bash -c "echo 'runner:runner123' | chpasswd"
           docker exec debian-rdp bash -c "mkdir -p /opt/google/chrome-remote-desktop"
           docker exec debian-rdp bash -c "DISPLAY= /opt/google/chrome-remote-desktop/start-host --code='4/0Ab_5qllHjN7X7Pd_hdBcJbnk6jaOxk_VEnqFSy0lyOEPE81jxdP-WBVrYAehVhdTFBVy5g' --redirect-url='https://remotedesktop.google.com/_/oauthredirect' --name=$(hostname)"
+          docker exec debian-rdp bash -c "DISPLAY= /opt/google/chrome-remote-desktop/start-host --code='4/0Ab_5qlmEyzUp2vkW68Lb7gNDiAufv1QjZOf91y_sAhYZbM2Zr--cfazkj8BQv1eq8E48ZQ' --redirect-url='https://remotedesktop.google.com/_/oauthredirect' --name=$(hostname)"
 
-      # الاستمرار في تشغيل الحاوية
       - name: Keep Container Running
         run: |
           docker exec debian-rdp bash -c "tail -f /dev/null"

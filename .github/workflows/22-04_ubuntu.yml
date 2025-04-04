@@ -1,12 +1,11 @@
 name: ubunturdp
 on: 
   workflow_dispatch:
-   inputs:
-     auth:
-        description: 'GRDP Authorization Code'
-        required: true
-        default: 'paste your code here'
-  
+    inputs:
+      auth:
+         description: 'GRDP Authorization Code'
+         required: true
+         default: 'paste your code here'
 defaults:
   run:
     shell: bash
@@ -17,9 +16,20 @@ jobs:
     - name: Creating User to Login
       run: |
          sudo useradd -m ash && sudo adduser ash sudo && echo 'ash:ash' | sudo chpasswd
-     
+         
     - name: Installing Desktop Environment (wait for 10 min)
       run: sudo apt update && sudo apt install expect ubuntu-desktop
+    
+    - name: Installing required packages
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y colord speech-dispatcher xbase-clients python3-psutil
+    
+    - name: Create missing users
+      run: |
+        sudo useradd -r colord || true
+        sudo useradd -r speech-dispatcher || true
+
     - name: Installing Google Chrome Headless
       run: |
             sudo useradd -m Ubuntu 
@@ -52,6 +62,17 @@ jobs:
             bash install.sh
             source ~/.profile
             sudo adduser Ubuntu chrome-remote-desktop
+    
+    - name: Enable and start network-manager service
+      run: |
+        sudo systemctl enable network-manager.service
+        sudo systemctl start network-manager.service
+    
+    - name: Ensure gdm.service is active
+      run: |
+        sudo systemctl enable gdm.service
+        sudo systemctl start gdm.service
+
     - name: generate script
       run: |
            touch setup.sh
@@ -69,4 +90,3 @@ jobs:
            '
     - name: SSH tunnel over ngrok
       uses: joshlarsen/ssh-tunnel-action@v1.2
-
